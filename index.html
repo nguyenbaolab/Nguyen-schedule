@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>So sánh lịch học — Nhóm A / B</title>
+<style>
+  :root{
+    --ink:#1e2430;
+    --paper:#f6f5f2;
+    --line:#dcd8d0;
+    --muted:#8b8577;
+    --common-bg:#eceae5;
+    --common-bd:#b9b3a4;
+    --common-tx:#57534a;
+    --a-bg:#dbe7fb;
+    --a-bd:#3b6fd6;
+    --a-tx:#1d3f8f;
+    --b-bg:#fbe6c8;
+    --b-bd:#c9791a;
+    --b-tx:#7a4a0c;
+    --conflict:#c23b3b;
+    --accent:#2f5233;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding:20px;
+  }
+  h1{
+    font-size:20px;
+    font-weight:700;
+    margin:0 0 2px 0;
+    letter-spacing:.2px;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:16px;
+  }
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-bottom:14px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+  }
+  .group{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .group-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:var(--muted);
+    align-self:center;
+    margin-right:4px;
+    font-weight:600;
+  }
+  button.tab{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    padding:6px 12px;
+    border-radius:7px;
+    font-size:13px;
+    cursor:pointer;
+    transition:all .12s ease;
+  }
+  button.tab:hover{ border-color:var(--accent); }
+  button.tab.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    font-weight:600;
+  }
+  button.view{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    padding:6px 14px;
+    border-radius:7px;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button.view[data-mode="all"].active{ background:#4b4b4b; border-color:#4b4b4b; color:#fff; }
+  button.view[data-mode="A"].active{ background:var(--a-bd); border-color:var(--a-bd); color:#fff; }
+  button.view[data-mode="B"].active{ background:var(--b-bd); border-color:var(--b-bd); color:#fff; }
+  button.view[data-mode="mix"].active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  .cancelled-note{
+    color:var(--muted);
+    font-size:11px;
+    margin:-10px 0 16px 0;
+    line-height:1.45;
+    max-width:900px;
+  }
+
+  .summary{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .stat{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 16px;
+    min-width:150px;
+  }
+  .stat .num{
+    font-size:22px;
+    font-weight:700;
+    line-height:1.1;
+  }
+  .stat .lbl{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    margin-top:2px;
+  }
+  .stat.warn .num{ color:var(--conflict); }
+
+  .legend{
+    display:flex;
+    gap:14px;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .legend .sw{
+    display:inline-block;
+    width:11px;height:11px;
+    border-radius:3px;
+    margin-right:5px;
+    vertical-align:-1px;
+    border:1px solid rgba(0,0,0,.15);
+  }
+
+  .calendar{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .cal-head{
+    display:grid;
+    grid-template-columns:56px repeat(5, 1fr);
+    border-bottom:1px solid var(--line);
+    background:#faf9f7;
+  }
+  .cal-head div{
+    padding:10px 6px;
+    text-align:center;
+    font-weight:700;
+    font-size:13px;
+    border-left:1px solid var(--line);
+  }
+  .cal-head div:first-child{ border-left:none; }
+
+  .cal-body{
+    display:grid;
+    grid-template-columns:56px repeat(5, 1fr);
+    position:relative;
+  }
+  .hours-col{
+    position:relative;
+    border-right:1px solid var(--line);
+  }
+  .hour-label{
+    position:absolute;
+    left:0; right:0;
+    font-size:10px;
+    color:var(--muted);
+    text-align:right;
+    padding-right:6px;
+    transform:translateY(-6px);
+  }
+  .day-col{
+    position:relative;
+    border-left:1px solid var(--line);
+    background-image:repeating-linear-gradient(to bottom, transparent, transparent calc(var(--hr) - 1px), var(--line) calc(var(--hr) - 1px), var(--line) var(--hr));
+  }
+  .event{
+    position:absolute;
+    border-radius:6px;
+    padding:4px 6px;
+    font-size:10.5px;
+    line-height:1.25;
+    overflow:hidden;
+    border:1.5px solid;
+    cursor:default;
+  }
+  .event .t{ font-weight:700; display:block; }
+  .event .c{ display:block; }
+  .event.common{ background:var(--common-bg); border-color:var(--common-bd); color:var(--common-tx); }
+  .event.A{ background:var(--a-bg); border-color:var(--a-bd); color:var(--a-tx); }
+  .event.B{ background:var(--b-bg); border-color:var(--b-bd); color:var(--b-tx); }
+  .event.conflict{
+    border-color:var(--conflict) !important;
+    border-width:2px;
+    box-shadow:0 0 0 1px var(--conflict) inset;
+  }
+  .event.conflict::after{
+    content: attr(data-badge);
+    position:absolute;
+    top:2px; right:3px;
+    background:var(--conflict);
+    color:#fff;
+    font-size:8.5px;
+    font-weight:700;
+    padding:1px 4px;
+    border-radius:8px;
+  }
+  footer{
+    margin-top:14px;
+    font-size:11px;
+    color:var(--muted);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<div id="loginGate" style="position:fixed;inset:0;background:#f6f5f2;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#fff;border:1px solid #dcd8d0;border-radius:12px;padding:32px 28px;max-width:320px;width:90%;text-align:center;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:14px;">🔒 Nhập mật khẩu để xem lịch</div>
+    <input type="password" id="pwInput" placeholder="Mật khẩu" style="width:100%;padding:9px 10px;border:1px solid #dcd8d0;border-radius:7px;font-size:14px;box-sizing:border-box;margin-bottom:10px;">
+    <button id="pwSubmit" style="width:100%;padding:9px;border:none;border-radius:7px;background:#2f5233;color:#fff;font-weight:600;cursor:pointer;font-size:14px;">Vào xem</button>
+    <div id="pwError" style="color:#c23b3b;font-size:12px;margin-top:8px;display:none;">Sai mật khẩu, thử lại.</div>
+  </div>
+</div>
+
+<div id="appContent" style="display:none;">
+<h1>📅 So sánh lịch học — Nhóm A / Nhóm B / Trộn tối ưu</h1>
+<div class="subtitle">Dữ liệu 6 tuần (31/8 – 9/10/2026), đối chiếu từ Lukkarikone — dùng để kiểm tra và so sánh phương án</div>
+<p class="cancelled-note">Đã ẩn sẵn 3 môn bị nhà trường hủy đăng ký: Global Business, Global Economics, International Trade Operations. 2 môn khác cũng bị hủy (Legal Essentials of International Trade, Leadership Skills) nhưng không có trong dữ liệu lịch vì trước giờ chưa từng được xếp lịch. (Sửa mảng CANCELLED_COURSES trong code nếu cần thay đổi sau này.)</p>
+
+<div class="toolbar">
+  <div class="group" id="weekTabs">
+    <span class="group-label">Tuần</span>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="group" id="viewTabs">
+    <span class="group-label">Xem theo</span>
+    <button class="view active" data-mode="all">Tất cả (đối chiếu)</button>
+    <button class="view" data-mode="A">Nhóm A thuần</button>
+    <button class="view" data-mode="B">Nhóm B thuần</button>
+    <button class="view" data-mode="mix">Trộn tối ưu</button>
+  </div>
+</div>
+
+<div class="summary">
+  <div class="stat"><div class="num" id="weekLabel">—</div><div class="lbl">Tuần đang xem</div></div>
+  <div class="stat warn"><div class="num" id="weekConflict">0p</div><div class="lbl">Trùng lịch tuần này</div></div>
+  <div class="stat warn"><div class="num" id="totalConflict">0p</div><div class="lbl">Tổng trùng 6 tuần (chế độ hiện tại)</div></div>
+</div>
+
+<div class="legend">
+  <span><span class="sw" style="background:var(--common-bg);border-color:var(--common-bd)"></span>Môn chung (bắt buộc cả 2 nhóm)</span>
+  <span><span class="sw" style="background:var(--a-bg);border-color:var(--a-bd)"></span>Nhóm A</span>
+  <span><span class="sw" style="background:var(--b-bg);border-color:var(--b-bd)"></span>Nhóm B</span>
+  <span><span class="sw" style="background:#fff;border-color:var(--conflict);border-width:2px"></span>Đang bị trùng giờ (số = phút trùng)</span>
+</div>
+
+<div class="calendar">
+  <div class="cal-head" id="calHead"></div>
+  <div class="cal-body" id="calBody"></div>
+</div>
+
+<footer>Trộn tối ưu = FinCalc→B · EssentialsLaw→A · IntercultMgmt→A · Finnish2→A · BusinessRes→B · Economics(Exercises)→A</footer>
+</div>
+
+<script>
+const SITE_PASSWORD = "doicaimatkhaunay"; // TODO: đổi mật khẩu này trước khi push lên git
+
+function checkPassword(){
+  const input = document.getElementById('pwInput').value;
+  if(input === SITE_PASSWORD){
+    localStorage.setItem('scheduleUnlocked', 'true');
+    document.getElementById('loginGate').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+document.getElementById('pwSubmit').addEventListener('click', checkPassword);
+document.getElementById('pwInput').addEventListener('keypress', function(e){
+  if(e.key === 'Enter') checkPassword();
+});
+
+// Nếu trình duyệt này đã từng nhập đúng mật khẩu trước đó, bỏ qua màn hình đăng nhập
+if(localStorage.getItem('scheduleUnlocked') === 'true'){
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+}
+
+const EVENTS = [{"week":1,"day":"T2","start":"08:45","end":"10:15","startMin":525,"endMin":615,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":1,"day":"T2","start":"10:30","end":"12:00","startMin":630,"endMin":720,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":1,"day":"T2","start":"14:45","end":"16:15","startMin":885,"endMin":975,"course":"Business Research","courseKey":"BusinessRes","group":"common"},{"week":1,"day":"T3","start":"11:00","end":"12:30","startMin":660,"endMin":750,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":1,"day":"T3","start":"13:15","end":"15:30","startMin":795,"endMin":930,"course":"Global Business","courseKey":"GlobalBiz","group":"common"},{"week":1,"day":"T3","start":"15:45","end":"17:15","startMin":945,"endMin":1035,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":1,"day":"T4","start":"08:45","end":"10:15","startMin":525,"endMin":615,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":1,"day":"T5","start":"08:45","end":"11:00","startMin":525,"endMin":660,"course":"Global Business","courseKey":"GlobalBiz","group":"common"},{"week":1,"day":"T2","start":"10:45","end":"12:15","startMin":645,"endMin":735,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"A"},{"week":1,"day":"T2","start":"13:00","end":"14:30","startMin":780,"endMin":870,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":1,"day":"T2","start":"13:00","end":"14:30","startMin":780,"endMin":870,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":1,"day":"T3","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":1,"day":"T5","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":1,"day":"T6","start":"08:30","end":"10:00","startMin":510,"endMin":600,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":1,"day":"T2","start":"10:45","end":"12:15","startMin":645,"endMin":735,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":1,"day":"T3","start":"10:45","end":"12:15","startMin":645,"endMin":735,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"B"},{"week":1,"day":"T3","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":1,"day":"T5","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":2,"day":"T2","start":"08:00","end":"09:30","startMin":480,"endMin":570,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":2,"day":"T2","start":"10:00","end":"11:30","startMin":600,"endMin":690,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":2,"day":"T3","start":"08:30","end":"10:00","startMin":510,"endMin":600,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":2,"day":"T3","start":"13:00","end":"15:15","startMin":780,"endMin":915,"course":"Global Business","courseKey":"GlobalBiz","group":"common"},{"week":2,"day":"T4","start":"10:15","end":"11:45","startMin":615,"endMin":705,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":2,"day":"T6","start":"09:45","end":"11:15","startMin":585,"endMin":675,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":2,"day":"T2","start":"08:45","end":"11:45","startMin":525,"endMin":705,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"A"},{"week":2,"day":"T2","start":"13:00","end":"14:30","startMin":780,"endMin":870,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":2,"day":"T3","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":2,"day":"T4","start":"09:00","end":"10:30","startMin":540,"endMin":630,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":2,"day":"T5","start":"09:45","end":"11:15","startMin":585,"endMin":675,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":2,"day":"T5","start":"10:45","end":"12:15","startMin":645,"endMin":735,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":2,"day":"T5","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":2,"day":"T2","start":"09:00","end":"10:30","startMin":540,"endMin":630,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":2,"day":"T2","start":"13:00","end":"16:00","startMin":780,"endMin":960,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"B"},{"week":2,"day":"T3","start":"10:45","end":"12:15","startMin":645,"endMin":735,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":2,"day":"T3","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":2,"day":"T5","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":3,"day":"T3","start":"08:00","end":"09:30","startMin":480,"endMin":570,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":3,"day":"T4","start":"11:15","end":"12:45","startMin":675,"endMin":765,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":3,"day":"T5","start":"13:15","end":"15:30","startMin":795,"endMin":930,"course":"Global Business","courseKey":"GlobalBiz","group":"common"},{"week":3,"day":"T6","start":"08:15","end":"09:45","startMin":495,"endMin":585,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":3,"day":"T6","start":"10:45","end":"12:15","startMin":645,"endMin":735,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":3,"day":"T6","start":"12:30","end":"14:00","startMin":750,"endMin":840,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":3,"day":"T2","start":"09:00","end":"10:30","startMin":540,"endMin":630,"course":"Business Research","courseKey":"BusinessRes","group":"A"},{"week":3,"day":"T3","start":"11:15","end":"12:45","startMin":675,"endMin":765,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":3,"day":"T3","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":3,"day":"T3","start":"14:00","end":"15:30","startMin":840,"endMin":930,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":3,"day":"T4","start":"08:00","end":"10:30","startMin":480,"endMin":630,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"A"},{"week":3,"day":"T4","start":"08:30","end":"10:00","startMin":510,"endMin":600,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":3,"day":"T4","start":"12:15","end":"13:45","startMin":735,"endMin":825,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":3,"day":"T5","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":3,"day":"T3","start":"08:00","end":"10:30","startMin":480,"endMin":630,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"B"},{"week":3,"day":"T3","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":3,"day":"T3","start":"13:00","end":"14:30","startMin":780,"endMin":870,"course":"Financial Calculations","courseKey":"FinCalc","group":"B"},{"week":3,"day":"T3","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":3,"day":"T4","start":"11:15","end":"12:45","startMin":675,"endMin":765,"course":"Business Research","courseKey":"BusinessRes","group":"B"},{"week":3,"day":"T5","start":"08:30","end":"10:00","startMin":510,"endMin":600,"course":"Financial Calculations","courseKey":"FinCalc","group":"B"},{"week":3,"day":"T5","start":"09:00","end":"10:30","startMin":540,"endMin":630,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":3,"day":"T5","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":3,"day":"T6","start":"12:45","end":"14:15","startMin":765,"endMin":855,"course":"Financial Calculations","courseKey":"FinCalc","group":"B"},{"week":4,"day":"T2","start":"08:00","end":"10:15","startMin":480,"endMin":615,"course":"Global Business","courseKey":"GlobalBiz","group":"common"},{"week":4,"day":"T2","start":"11:00","end":"12:30","startMin":660,"endMin":750,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":4,"day":"T4","start":"08:30","end":"10:00","startMin":510,"endMin":600,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":4,"day":"T5","start":"09:00","end":"10:30","startMin":540,"endMin":630,"course":"Economics","courseKey":"Economics","group":"common"},{"week":4,"day":"T5","start":"10:45","end":"12:15","startMin":645,"endMin":735,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":4,"day":"T6","start":"09:00","end":"10:30","startMin":540,"endMin":630,"course":"Business Research","courseKey":"BusinessRes","group":"common"},{"week":4,"day":"T6","start":"09:00","end":"10:30","startMin":540,"endMin":630,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":4,"day":"T6","start":"11:30","end":"13:00","startMin":690,"endMin":780,"course":"Economics","courseKey":"Economics","group":"common"},{"week":4,"day":"T2","start":"10:15","end":"11:45","startMin":615,"endMin":705,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":4,"day":"T3","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":4,"day":"T4","start":"08:30","end":"10:00","startMin":510,"endMin":600,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":4,"day":"T4","start":"08:45","end":"10:15","startMin":525,"endMin":615,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":4,"day":"T4","start":"11:15","end":"13:45","startMin":675,"endMin":825,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"A"},{"week":4,"day":"T5","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":4,"day":"T6","start":"11:15","end":"12:45","startMin":675,"endMin":765,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":4,"day":"T2","start":"12:00","end":"13:30","startMin":720,"endMin":810,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":4,"day":"T2","start":"14:15","end":"15:45","startMin":855,"endMin":945,"course":"Financial Calculations","courseKey":"FinCalc","group":"B"},{"week":4,"day":"T3","start":"08:45","end":"10:15","startMin":525,"endMin":615,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":4,"day":"T3","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":4,"day":"T4","start":"08:00","end":"10:30","startMin":480,"endMin":630,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"B"},{"week":4,"day":"T5","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":4,"day":"T6","start":"13:45","end":"15:15","startMin":825,"endMin":915,"course":"Financial Calculations","courseKey":"FinCalc","group":"B"},{"week":5,"day":"T2","start":"09:15","end":"10:45","startMin":555,"endMin":645,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":5,"day":"T2","start":"09:15","end":"10:45","startMin":555,"endMin":645,"course":"Economics","courseKey":"Economics","group":"common"},{"week":5,"day":"T3","start":"10:15","end":"11:45","startMin":615,"endMin":705,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":5,"day":"T3","start":"12:30","end":"14:00","startMin":750,"endMin":840,"course":"International Trade Operations","courseKey":"IntlTrade","group":"common"},{"week":5,"day":"T4","start":"08:00","end":"09:30","startMin":480,"endMin":570,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":5,"day":"T4","start":"09:45","end":"11:15","startMin":585,"endMin":675,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":5,"day":"T5","start":"11:30","end":"13:45","startMin":690,"endMin":825,"course":"Global Business","courseKey":"GlobalBiz","group":"common"},{"week":5,"day":"T6","start":"11:30","end":"13:00","startMin":690,"endMin":780,"course":"Economics","courseKey":"Economics","group":"common"},{"week":5,"day":"T3","start":"08:00","end":"09:30","startMin":480,"endMin":570,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":5,"day":"T3","start":"08:45","end":"10:45","startMin":525,"endMin":645,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":5,"day":"T3","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":5,"day":"T5","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":5,"day":"T6","start":"08:15","end":"10:45","startMin":495,"endMin":645,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"A"},{"week":5,"day":"T6","start":"11:30","end":"13:00","startMin":690,"endMin":780,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":5,"day":"T6","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Business Research","courseKey":"BusinessRes","group":"A"},{"week":5,"day":"T2","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Business Research","courseKey":"BusinessRes","group":"B"},{"week":5,"day":"T3","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":5,"day":"T3","start":"14:45","end":"16:15","startMin":885,"endMin":975,"course":"Financial Calculations","courseKey":"FinCalc","group":"B"},{"week":5,"day":"T5","start":"08:45","end":"10:45","startMin":525,"endMin":645,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":5,"day":"T5","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":5,"day":"T6","start":"13:15","end":"15:45","startMin":795,"endMin":945,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"B"},{"week":5,"day":"T6","start":"14:00","end":"15:30","startMin":840,"endMin":930,"course":"Financial Calculations","courseKey":"FinCalc","group":"B"},{"week":6,"day":"T2","start":"10:00","end":"11:30","startMin":600,"endMin":690,"course":"Economics","courseKey":"Economics","group":"common"},{"week":6,"day":"T2","start":"11:30","end":"13:00","startMin":690,"endMin":780,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":6,"day":"T2","start":"12:15","end":"13:45","startMin":735,"endMin":825,"course":"Tools for Internationalisation","courseKey":"ToolsIntl","group":"common"},{"week":6,"day":"T3","start":"08:30","end":"10:45","startMin":510,"endMin":645,"course":"Global Business","courseKey":"GlobalBiz","group":"common"},{"week":6,"day":"T4","start":"12:30","end":"14:00","startMin":750,"endMin":840,"course":"Global Economics","courseKey":"GlobalEcon","group":"common"},{"week":6,"day":"T2","start":"14:00","end":"15:30","startMin":840,"endMin":930,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":6,"day":"T3","start":"08:00","end":"09:30","startMin":480,"endMin":570,"course":"Financial Calculations","courseKey":"FinCalc","group":"A"},{"week":6,"day":"T3","start":"09:15","end":"10:45","startMin":555,"endMin":645,"course":"Business Research","courseKey":"BusinessRes","group":"A"},{"week":6,"day":"T3","start":"11:30","end":"13:00","startMin":690,"endMin":780,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":6,"day":"T4","start":"09:15","end":"10:45","startMin":555,"endMin":645,"course":"Intercultural Management","courseKey":"ICMgmt","group":"A"},{"week":6,"day":"T4","start":"11:30","end":"14:00","startMin":690,"endMin":840,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"A"},{"week":6,"day":"T5","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Economics (Exercises)","courseKey":"Economics_ex","group":"A"},{"week":6,"day":"T5","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"A"},{"week":6,"day":"T3","start":"09:15","end":"10:45","startMin":555,"endMin":645,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":6,"day":"T3","start":"11:30","end":"13:00","startMin":690,"endMin":780,"course":"Economics (Exercises)","courseKey":"Economics_ex","group":"B"},{"week":6,"day":"T3","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":6,"day":"T4","start":"08:15","end":"10:45","startMin":495,"endMin":645,"course":"Essentials of Business Law","courseKey":"EssentialsLaw","group":"B"},{"week":6,"day":"T4","start":"10:15","end":"11:45","startMin":615,"endMin":705,"course":"Financial Calculations","courseKey":"FinCalc","group":"B"},{"week":6,"day":"T5","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Finnish 2","courseKey":"Finnish2","group":"B"},{"week":6,"day":"T5","start":"14:30","end":"16:00","startMin":870,"endMin":960,"course":"Intercultural Management","courseKey":"ICMgmt","group":"B"},{"week":6,"day":"T6","start":"12:15","end":"13:45","startMin":735,"endMin":825,"course":"Business Research","courseKey":"BusinessRes","group":"B"},{"week":1,"day":"T3","start":"15:15","end":"16:45","startMin":915,"endMin":1005,"course":"Orientation to Studies 2","courseKey":"Orientation2","group":"common"},{"week":1,"day":"T5","start":"09:45","end":"11:15","startMin":585,"endMin":675,"course":"Orientation to Studies 2","courseKey":"Orientation2","group":"common"},{"week":1,"day":"T6","start":"13:45","end":"16:00","startMin":825,"endMin":960,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"},{"week":2,"day":"T3","start":"13:30","end":"15:00","startMin":810,"endMin":900,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"},{"week":2,"day":"T5","start":"15:15","end":"16:45","startMin":915,"endMin":1005,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"},{"week":3,"day":"T2","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"},{"week":3,"day":"T4","start":"14:00","end":"15:30","startMin":840,"endMin":930,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"},{"week":4,"day":"T2","start":"13:45","end":"16:15","startMin":825,"endMin":975,"course":"Managing and Organizations (*)","courseKey":"ManagingOrg","group":"common"},{"week":4,"day":"T3","start":"12:00","end":"15:00","startMin":720,"endMin":900,"course":"TalentMatch recruitment event","courseKey":"Orientation2","group":"common"},{"week":4,"day":"T4","start":"14:00","end":"16:00","startMin":840,"endMin":960,"course":"International student feedback workshop","courseKey":"FeedbackWorkshop","group":"common"},{"week":4,"day":"T4","start":"14:00","end":"16:00","startMin":840,"endMin":960,"course":"Workshop for international students","courseKey":"IntlWorkshop","group":"common"},{"week":5,"day":"T2","start":"11:45","end":"13:15","startMin":705,"endMin":795,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"},{"week":5,"day":"T3","start":"15:15","end":"16:45","startMin":915,"endMin":1005,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"},{"week":6,"day":"T2","start":"14:00","end":"15:30","startMin":840,"endMin":930,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"},{"week":6,"day":"T2","start":"15:45","end":"17:15","startMin":945,"endMin":1035,"course":"Managing and Organizations","courseKey":"ManagingOrg","group":"common"}];
+
+const WEEK_LABELS = {
+  1:'Tuần 1 · 31/8–4/9', 2:'Tuần 2 · 7–11/9', 3:'Tuần 3 · 14–18/9',
+  4:'Tuần 4 · 21–25/9', 5:'Tuần 5 · 28/9–2/10', 6:'Tuần 6 · 5–9/10'
+};
+const DAYS = ['T2','T3','T4','T5','T6'];
+const DAY_LABELS = {T2:'Thứ 2', T3:'Thứ 3', T4:'Thứ 4', T5:'Thứ 5', T6:'Thứ 6'};
+const WEEK_START_DATES = {
+  1: '2026-08-31',
+  2: '2026-09-07',
+  3: '2026-09-14',
+  4: '2026-09-21',
+  5: '2026-09-28',
+  6: '2026-10-05'
+};
+
+function getDateLabel(week, day) {
+  const dayIndex = DAYS.indexOf(day);
+  const start = new Date(WEEK_START_DATES[week] + 'T00:00:00');
+  start.setDate(start.getDate() + dayIndex);
+  const dd = String(start.getDate()).padStart(2,'0');
+  const mm = String(start.getMonth()+1).padStart(2,'0');
+  return `${dd}/${mm}`;
+}
+
+const OPTIMAL_MIX = {
+  FinCalc:'B', EssentialsLaw:'A', ICMgmt:'A', Finnish2:'A', BusinessRes:'B', Economics_ex:'A'
+};
+
+const CANCELLED_COURSES = ['GlobalBiz', 'GlobalEcon', 'IntlTrade'];
+
+const DAY_START = 8*60;   // 8:00
+const DAY_END   = 16*60+30; // 16:30
+const PX_PER_MIN = 1.15;
+const GRID_HEIGHT = (DAY_END-DAY_START)*PX_PER_MIN;
+
+let currentWeek = 1;
+let currentMode = 'all';
+
+// ---------- build toolbar ----------
+const weekTabsEl = document.getElementById('weekTabs');
+for(let w=1; w<=6; w++){
+  const b = document.createElement('button');
+  b.className = 'tab' + (w===1?' active':'');
+  b.textContent = 'Tuần '+w;
+  b.dataset.week = w;
+  b.onclick = ()=>{ currentWeek=w; refreshTabs(); render(); };
+  weekTabsEl.appendChild(b);
+}
+document.querySelectorAll('.view').forEach(b=>{
+  b.onclick = ()=>{ currentMode = b.dataset.mode; refreshTabs(); render(); };
+});
+
+function refreshTabs(){
+  document.querySelectorAll('#weekTabs .tab').forEach(b=>{
+    b.classList.toggle('active', Number(b.dataset.week)===currentWeek);
+  });
+  document.querySelectorAll('.view').forEach(b=>{
+    b.classList.toggle('active', b.dataset.mode===currentMode);
+  });
+}
+
+// ---------- filter events for a mode ----------
+function eventsForMode(weekEvents, mode){
+  weekEvents = weekEvents.filter(e => !CANCELLED_COURSES.includes(e.courseKey));
+  let events;
+  if(mode==='all') events = weekEvents;
+  else if(mode==='A') events = weekEvents.filter(e=> e.group==='common' || e.group==='A');
+  else if(mode==='B') events = weekEvents.filter(e=> e.group==='common' || e.group==='B');
+  else if(mode==='mix') events = weekEvents.filter(e=> e.group==='common' || OPTIMAL_MIX[e.courseKey]===e.group);
+  return events;
+}
+
+// ---------- overlap detection ----------
+function computeOverlaps(dayEvents){
+  // returns map index -> total overlap minutes, plus list of pairs
+  const overlapMin = new Array(dayEvents.length).fill(0);
+  for(let i=0;i<dayEvents.length;i++){
+    for(let j=i+1;j<dayEvents.length;j++){
+      const a=dayEvents[i], b=dayEvents[j];
+      const ov = Math.min(a.endMin,b.endMin) - Math.max(a.startMin,b.startMin);
+      if(ov>0){
+        overlapMin[i]+=ov;
+        overlapMin[j]+=ov;
+      }
+    }
+  }
+  return overlapMin;
+}
+
+function assignColumns(dayEvents){
+  const layouts = dayEvents.map(()=>({ column:0, leftPercent:0, widthPercent:100 }));
+  const columnEnds = [];
+
+  dayEvents.forEach((ev, idx)=>{
+    let col = columnEnds.findIndex(end=> end <= ev.startMin);
+    if(col === -1){
+      col = columnEnds.length;
+      columnEnds.push(ev.endMin);
+    } else {
+      columnEnds[col] = ev.endMin;
+    }
+    layouts[idx].column = col;
+  });
+
+  let clusterStart = 0;
+  let clusterMaxEnd = dayEvents.length ? dayEvents[0].endMin : 0;
+
+  function finalizeCluster(start, end){
+    let maxCol = 0;
+    for(let i=start; i<end; i++) maxCol = Math.max(maxCol, layouts[i].column);
+    const totalCols = maxCol + 1;
+    const widthPercent = 100 / totalCols;
+    for(let i=start; i<end; i++){
+      layouts[i].leftPercent = layouts[i].column * widthPercent;
+      layouts[i].widthPercent = widthPercent;
+    }
+  }
+
+  for(let i=0; i<dayEvents.length; i++){
+    if(i > 0 && dayEvents[i].startMin >= clusterMaxEnd){
+      finalizeCluster(clusterStart, i);
+      clusterStart = i;
+      clusterMaxEnd = dayEvents[i].endMin;
+    } else {
+      clusterMaxEnd = Math.max(clusterMaxEnd, dayEvents[i].endMin);
+    }
+  }
+  if(dayEvents.length) finalizeCluster(clusterStart, dayEvents.length);
+
+  return layouts;
+}
+
+// ---------- render calendar head ----------
+function buildHead(week){
+  const head = document.getElementById('calHead');
+  head.innerHTML = '<div></div>' + DAYS.map(d=>`<div>${DAY_LABELS[d]}<br><span style="font-weight:400;font-size:11px;color:var(--muted)">${getDateLabel(week,d)}</span></div>`).join('');
+}
+
+// ---------- render body ----------
+function render(){
+  buildHead(currentWeek);
+  document.getElementById('weekLabel').textContent = WEEK_LABELS[currentWeek];
+
+  const weekEvents = EVENTS.filter(e=>e.week===currentWeek);
+  const visible = eventsForMode(weekEvents, currentMode);
+
+  // compute conflicts per day for THIS week (for weekly stat) and total across all weeks (for cumulative stat)
+  let weekConflictMin = 0;
+  const body = document.getElementById('calBody');
+  body.innerHTML = '';
+
+  const hoursCol = document.createElement('div');
+  hoursCol.className='hours-col';
+  hoursCol.style.height = GRID_HEIGHT+'px';
+  for(let h=8; h<=16; h++){
+    const lab=document.createElement('div');
+    lab.className='hour-label';
+    lab.style.top = ((h*60-DAY_START)*PX_PER_MIN)+'px';
+    lab.textContent = h+':00';
+    hoursCol.appendChild(lab);
+  }
+  body.appendChild(hoursCol);
+
+  DAYS.forEach(day=>{
+    const col = document.createElement('div');
+    col.className='day-col';
+    col.style.setProperty('--hr', (60*PX_PER_MIN)+'px');
+    col.style.height = GRID_HEIGHT+'px';
+
+    const dayEvents = visible.filter(e=>e.day===day).sort((a,b)=>a.startMin-b.startMin);
+    const overlapMin = computeOverlaps(dayEvents);
+    weekConflictMin += overlapMin.reduce((s,v)=>s+v,0)/2; // each overlap counted twice (once per event)
+
+    const layouts = assignColumns(dayEvents);
+    dayEvents.forEach((ev,idx)=>{
+      const div = document.createElement('div');
+      const hasConflict = overlapMin[idx] > 0;
+      div.className = 'event ' + ev.group + (hasConflict?' conflict':'');
+      const top = (ev.startMin-DAY_START)*PX_PER_MIN;
+      const height = Math.max((ev.endMin-ev.startMin)*PX_PER_MIN, 24);
+      const { leftPercent, widthPercent } = layouts[idx];
+      div.style.top = top+'px';
+      div.style.height = height+'px';
+      div.style.left = leftPercent + '%';
+      div.style.width = 'calc(' + (widthPercent * 0.96) + '% - 2px)';
+      div.title = ev.start + '-' + ev.end + ' | ' + ev.course + (ev.group !== 'common' ? ' (' + ev.group + ')' : ' (Chung)');
+      if(hasConflict) div.setAttribute('data-badge', overlapMin[idx]+'p');
+      div.innerHTML = `<span class="t">${ev.start}-${ev.end}</span><span class="c">${ev.course}${ev.group!=='common' ? ' ('+ev.group+')' : ''}</span>`;
+      col.appendChild(div);
+    });
+
+    body.appendChild(col);
+  });
+
+  document.getElementById('weekConflict').textContent = Math.round(weekConflictMin)+'p';
+
+  // total across all 6 weeks for current mode
+  let totalMin = 0;
+  for(let w=1; w<=6; w++){
+    const wE = EVENTS.filter(e=>e.week===w);
+    const vis = eventsForMode(wE, currentMode);
+    DAYS.forEach(day=>{
+      const dE = vis.filter(e=>e.day===day);
+      const ov = computeOverlaps(dE);
+      totalMin += ov.reduce((s,v)=>s+v,0)/2;
+    });
+  }
+  document.getElementById('totalConflict').textContent = Math.round(totalMin)+'p ('+(totalMin/60).toFixed(1)+'h)';
+}
+
+render();
+</script>
+</body>
+</html>
